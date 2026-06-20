@@ -140,31 +140,72 @@ void apsp_imprimir_matriz(const ResultadoAPSP *r)
 
 void apsp_imprimir_rota(const ResultadoAPSP *r, int origem, int destino)
 {
-    /* TODO:
-     * se prox[origem][destino] == -1 -> "sem rota".
-     * senao seguir: u = origem; imprime u; enquanto u != destino:
-     *   u = prox[u][destino]; imprime u;
-     */
-    (void) r; (void) origem; (void) destino;
+    int u;
+
+    if (r == NULL)
+        return;
+
+    /* Indices fora do intervalo. */
+    if (origem < 0 || origem >= r->num_vertices ||
+        destino < 0 || destino >= r->num_vertices) {
+        printf("Rota %d -> %d: indices invalidos.\n", origem, destino);
+        return;
+    }
+
+    /* Sem caminho possivel entre os dois pontos. */
+    if (r->prox[origem][destino] == -1) {
+        printf("Rota %d -> %d: nao existe caminho.\n", origem, destino);
+        return;
+    }
+
+    /* Reconstroi seguindo a matriz prox: a cada passo, vai para o proximo
+     * vertice no caminho ate chegar no destino. */
+    printf("Rota %d -> %d (custo %d): %d", origem, destino,
+           r->dist[origem][destino], origem);
+    u = origem;
+    while (u != destino) {
+        u = r->prox[u][destino];
+        printf(" -> %d", u);
+    }
+    printf("\n");
 }
 
 void apsp_atualizar_aresta(ResultadoAPSP *r, int u, int v, int novo_peso)
 {
-    /* TODO (diferencial do trabalho):
-     * Reduzir o peso da aresta u->v e reajustar a matriz inteira em O(V^2):
-     *
-     *   if (novo_peso < dist[u][v]) {
-     *       dist[u][v] = novo_peso; prox[u][v] = v;
-     *       for (i = 0; i < V; i++)
-     *         for (j = 0; j < V; j++)
-     *           if (dist[i][u] + novo_peso + dist[v][j] < dist[i][j]) {
-     *               dist[i][j] = dist[i][u] + novo_peso + dist[v][j];
-     *               prox[i][j] = prox[i][u];
-     *           }
-     *   }
-     *
-     * Observacao para o relatorio: AUMENTAR um peso e o caso dificil e
-     * normalmente exige recomputo (discutir essa limitacao).
-     */
-    (void) r; (void) u; (void) v; (void) novo_peso;
+    int i, j, V;
+
+    if (r == NULL)
+        return;
+
+    V = r->num_vertices;
+
+    if (u < 0 || u >= V || v < 0 || v >= V) {
+        fprintf(stderr, "Aviso: atualizacao (%d -> %d) ignorada (indice invalido).\n",
+                u, v);
+        return;
+    }
+
+    /* Atualizacao incremental em O(V^2), valida quando o peso DIMINUI.
+     * Se a nova aresta u->v nao melhora o que ja temos, nada muda. */
+    if (novo_peso >= r->dist[u][v])
+        return;
+
+    /* A aresta direta u->v ficou mais rapida: registra. */
+    r->dist[u][v] = novo_peso;
+    r->prox[u][v] = v;
+
+    /* Propaga: para todo par (i, j), verifica se o caminho que usa a aresta
+     * melhorada (i ... u -> v ... j) ficou mais curto que o atual. */
+    for (i = 0; i < V; i++) {
+        if (r->dist[i][u] == INFINITO)   /* i nem chega em u: nada a fazer */
+            continue;
+        for (j = 0; j < V; j++) {
+            if (r->dist[v][j] == INFINITO) /* de v nao se chega em j */
+                continue;
+            if (r->dist[i][u] + novo_peso + r->dist[v][j] < r->dist[i][j]) {
+                r->dist[i][j] = r->dist[i][u] + novo_peso + r->dist[v][j];
+                r->prox[i][j] = r->prox[i][u];
+            }
+        }
+    }
 }

@@ -51,6 +51,21 @@ int main(int argc, char *argv[])
     printf("\n== Matriz de custos minimos (todos -> todos) ==\n");
     apsp_imprimir_matriz(r);
 
+    /* Reconstrucao de rota: mostra o caminho real, nao so o tempo. */
+    printf("\n== Rotas reconstruidas ==\n");
+    apsp_imprimir_rota(r, 0, 1);
+    apsp_imprimir_rota(r, 1, 0);
+    apsp_imprimir_rota(r, 0, 4);
+
+    /* Anomalia de transito: a aresta 0->1 fica mais rapida (de 4 para 1 min).
+     * Atualizacao incremental em O(V^2), sem recomputar tudo (O(V^3)). */
+    printf("\n== Anomalia de transito: rua 0->1 caiu de 4 para 1 minuto ==\n");
+    apsp_atualizar_aresta(r, 0, 1, 1);
+    apsp_imprimir_matriz(r);
+
+    printf("\n== Mesma rota apos a atualizacao ==\n");
+    apsp_imprimir_rota(r, 0, 1);
+
     apsp_destruir(r);
     grafo_destruir(g);
     return 0;
