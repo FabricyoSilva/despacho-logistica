@@ -1,0 +1,15 @@
+# Binarios e objetos
+build/
+*.o
+*.obj
+despacho
+despacho.exe
+*.exe
+
+# Diretorios de IDE
+.vscode/
+.idea/
+
+# Arquivos temporarios
+*.log
+*~
