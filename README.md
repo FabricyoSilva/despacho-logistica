@@ -2,6 +2,15 @@
 
 Projeto da **Atividade 3 — Seminário de Estruturas Avançadas** (Proposta de Projeto 5).
 
+## Integrantes do grupo
+
+- Fabricyo Silva
+- Pedro Afonso
+- Mateus Cavalcante
+- Juliana Miranda
+- Luendell dos Reis
+- Álife Roberto
+
 ## Problema
 
 Uma startup de entregas opera numa região metropolitana modelada como um
