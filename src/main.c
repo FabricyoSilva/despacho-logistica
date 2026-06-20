@@ -41,6 +41,17 @@ int main(int argc, char *argv[])
     printf("== Matriz de adjacencia (tempos diretos) ==\n");
     grafo_imprimir(g);
 
+    ResultadoAPSP *r = floyd_warshall_executar(g);
+    if (r == NULL) {
+        fprintf(stderr, "Erro ao executar o Floyd-Warshall.\n");
+        grafo_destruir(g);
+        return 1;
+    }
+
+    printf("\n== Matriz de custos minimos (todos -> todos) ==\n");
+    apsp_imprimir_matriz(r);
+
+    apsp_destruir(r);
     grafo_destruir(g);
     return 0;
 }
