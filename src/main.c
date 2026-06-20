@@ -19,30 +19,24 @@
  * >>> ESQUELETO: descomente e preencha conforme implementar os modulos. <<<
  */
 
-int main(void)
+int main(int argc, char *argv[])
 {
     /* -----------------------------------------------------------------
-     * TESTE TEMPORARIO do modulo grafo.
-     * Enquanto o io.c (leitura de arquivo) nao esta pronto, montamos um
-     * grafo na mao para conferir grafo_criar / adicionar_aresta / imprimir.
-     * Depois este bloco sera substituido pelo fluxo real da demonstracao.
+     * TESTE do modulo io: carrega o mapa de um arquivo e imprime a matriz.
+     * Uso: ./despacho data/mapa_exemplo.txt
+     * Os modulos floyd_warshall (APSP, rota e update) serao ligados depois.
      * ----------------------------------------------------------------- */
 
-    Grafo *g = grafo_criar(5);
-    if (g == NULL) {
-        fprintf(stderr, "Erro ao criar o grafo.\n");
+    if (argc < 2) {
+        fprintf(stderr, "Uso: %s <arquivo_do_mapa>\n", argv[0]);
         return 1;
     }
 
-    /* Mesmas arestas do data/mapa_exemplo.txt (5 vertices, 8 arestas). */
-    grafo_adicionar_aresta(g, 0, 1, 4);
-    grafo_adicionar_aresta(g, 0, 2, 1);
-    grafo_adicionar_aresta(g, 2, 1, 1);
-    grafo_adicionar_aresta(g, 1, 3, 2);
-    grafo_adicionar_aresta(g, 3, 2, 5);
-    grafo_adicionar_aresta(g, 2, 3, 8);
-    grafo_adicionar_aresta(g, 3, 4, 3);
-    grafo_adicionar_aresta(g, 4, 0, 7);
+    Grafo *g = io_carregar_mapa(argv[1]);
+    if (g == NULL) {
+        fprintf(stderr, "Erro ao carregar o mapa.\n");
+        return 1;
+    }
 
     printf("== Matriz de adjacencia (tempos diretos) ==\n");
     grafo_imprimir(g);
