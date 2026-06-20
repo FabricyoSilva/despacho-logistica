@@ -19,7 +19,7 @@
 #define INFINITO 1000000000
 
 typedef struct {
-    int   num_vertices;   /* quantidade de pontos (V) */
+    int  num_vertices;   /* quantidade de pontos (V) */
     int **adj;            /* matriz V x V com os pesos das arestas */
 } Grafo;
 
@@ -32,9 +32,8 @@ Grafo *grafo_criar(int num_vertices);
  * TODO: liberar na ordem correta para nao vazar memoria. */
 void grafo_destruir(Grafo *g);
 
-/* Adiciona/atualiza a aresta direcionada origem -> destino com o peso dado.
- * TODO: validar indices e atribuir g->adj[origem][destino] = peso. */
-void grafo_add_aresta(Grafo *g, int origem, int destino, int peso);
+/* Adiciona/atualiza a aresta direcionada origem -> destino com o peso dado. */
+void grafo_adicionar_aresta(Grafo *g, int origem, int destino, int peso);
 
 /* Imprime a matriz de adjacencia no console (para conferencia/debug). */
 void grafo_imprimir(const Grafo *g);

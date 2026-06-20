@@ -19,40 +19,34 @@
  * >>> ESQUELETO: descomente e preencha conforme implementar os modulos. <<<
  */
 
-int main(int argc, char *argv[])
+int main(void)
 {
-    if (argc < 2) {
-        fprintf(stderr, "Uso: %s <arquivo_do_mapa>\n", argv[0]);
-        return 1;
-    }
+    /* -----------------------------------------------------------------
+     * TESTE TEMPORARIO do modulo grafo.
+     * Enquanto o io.c (leitura de arquivo) nao esta pronto, montamos um
+     * grafo na mao para conferir grafo_criar / adicionar_aresta / imprimir.
+     * Depois este bloco sera substituido pelo fluxo real da demonstracao.
+     * ----------------------------------------------------------------- */
 
-    /* TODO: descomentar conforme as funcoes forem implementadas.
-
-    Grafo *g = io_carregar_mapa(argv[1]);
+    Grafo *g = grafo_criar(5);
     if (g == NULL) {
-        fprintf(stderr, "Erro ao carregar o mapa.\n");
+        fprintf(stderr, "Erro ao criar o grafo.\n");
         return 1;
     }
+
+    /* Mesmas arestas do data/mapa_exemplo.txt (5 vertices, 8 arestas). */
+    grafo_adicionar_aresta(g, 0, 1, 4);
+    grafo_adicionar_aresta(g, 0, 2, 1);
+    grafo_adicionar_aresta(g, 2, 1, 1);
+    grafo_adicionar_aresta(g, 1, 3, 2);
+    grafo_adicionar_aresta(g, 3, 2, 5);
+    grafo_adicionar_aresta(g, 2, 3, 8);
+    grafo_adicionar_aresta(g, 3, 4, 3);
+    grafo_adicionar_aresta(g, 4, 0, 7);
 
     printf("== Matriz de adjacencia (tempos diretos) ==\n");
     grafo_imprimir(g);
 
-    ResultadoAPSP *r = floyd_warshall_executar(g);
-
-    printf("\n== Matriz de custos minimos (todos -> todos) ==\n");
-    apsp_imprimir_matriz(r);
-
-    printf("\n== Rota de 0 ate %d ==\n", g->num_vertices - 1);
-    apsp_imprimir_rota(r, 0, g->num_vertices - 1);
-
-    printf("\n== Anomalia de transito: rua 0->1 ficou mais rapida (peso 1) ==\n");
-    apsp_atualizar_aresta(r, 0, 1, 1);
-    apsp_imprimir_matriz(r);
-
-    apsp_destruir(r);
     grafo_destruir(g);
-    */
-
-    printf("Esqueleto do projeto. Implemente os modulos em src/.\n");
     return 0;
 }
