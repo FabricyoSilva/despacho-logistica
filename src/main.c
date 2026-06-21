@@ -7,40 +7,103 @@
 /*
  * main.c
  * ------
- * Fluxo da demonstracao (roteiro para a apresentacao):
+ * Demonstracao INTERATIVA do sistema de despacho (menu no console).
  *
- *   1. Carregar o mapa de um arquivo (data/mapa_exemplo.txt).
- *   2. Mostrar a matriz de adjacencia (tempos diretos).
- *   3. Rodar Floyd-Warshall e mostrar a matriz de custos minimos (todos->todos).
- *   4. Reconstruir e mostrar uma rota especifica (origem -> destino).
- *   5. Simular uma ANOMALIA DE TRANSITO (mudar o peso de uma aresta) e
- *      atualizar a matriz de forma incremental, mostrando o antes/depois.
+ * O mapa e carregado de um arquivo (data/mapa_exemplo.txt) e o Floyd-Warshall
+ * e executado UMA vez no inicio. Depois o usuario escolhe, em tempo real, o que
+ * quer ver/fazer:
  *
- * >>> ESQUELETO: descomente e preencha conforme implementar os modulos. <<<
+ *   1. Mostrar a matriz de adjacencia (tempos diretos).
+ *   2. Mostrar a matriz de custos minimos (todos -> todos).
+ *   3. Consultar uma rota especifica (origem -> destino).
+ *   4. Simular uma ANOMALIA DE TRANSITO (mudar o peso de uma rua) e atualizar
+ *      a matriz de forma incremental, mostrando o resultado.
+ *   0. Sair.
+ *
+ * Uso: ./despacho data/mapa_exemplo.txt
  */
+
+/* Le um inteiro do teclado de forma robusta: repete enquanto a entrada nao for
+ * um numero valido (limpando o que sobrou no buffer). Retorna o valor lido. */
+static int ler_inteiro(const char *prompt)
+{
+    int valor;
+    int c;
+
+    for (;;) {
+        printf("%s", prompt);
+        if (scanf("%d", &valor) == 1) {
+            /* descarta o resto da linha (incluindo o '\n') */
+            while ((c = getchar()) != '\n' && c != EOF)
+                ;
+            return valor;
+        }
+
+        /* entrada invalida: limpa o buffer e pede de novo */
+        printf("Entrada invalida, tente novamente.\n");
+        while ((c = getchar()) != '\n' && c != EOF)
+            ;
+    }
+}
+
+/* Imprime o menu de opcoes. */
+static void mostrar_menu(void)
+{
+    printf("\n=== Despacho de Logistica Urbana ===\n");
+    printf("1. Mostrar matriz de adjacencia (tempos diretos)\n");
+    printf("2. Mostrar matriz de custos minimos (APSP)\n");
+    printf("3. Consultar rota (origem -> destino)\n");
+    printf("4. Simular anomalia de transito (mudar peso de uma rua)\n");
+    printf("0. Sair\n");
+}
+
+/* Opcao 3: pede origem/destino e imprime a rota reconstruida. */
+static void opcao_consultar_rota(const ResultadoAPSP *r)
+{
+    int origem  = ler_inteiro("Origem: ");
+    int destino = ler_inteiro("Destino: ");
+    apsp_imprimir_rota(r, origem, destino);
+}
+
+/* Opcao 4: pede a aresta e o novo peso, aplica a atualizacao incremental e
+ * reimprime a matriz de custos minimos (antes/depois ao vivo). */
+static void opcao_simular_anomalia(ResultadoAPSP *r)
+{
+    int u         = ler_inteiro("Aresta - origem (u): ");
+    int v         = ler_inteiro("Aresta - destino (v): ");
+    int novo_peso = ler_inteiro("Novo peso (minutos): ");
+
+    /* A atualizacao incremental em O(V^2) so reotimiza quando o peso DIMINUI.
+     * Avisamos o usuario quando o novo peso nao melhora o caminho atual, para
+     * a demonstracao ficar honesta (aumentar peso e o caso dificil). */
+    if (novo_peso >= r->dist[u][v]) {
+        printf("Aviso: o novo peso (%d) nao reduz o tempo atual de %d->%d (%d).\n",
+               novo_peso, u, v, r->dist[u][v]);
+        printf("A atualizacao incremental so trata reducao de peso; nada muda.\n");
+        return;
+    }
+
+    apsp_atualizar_aresta(r, u, v, novo_peso);
+    printf("\nRua %d->%d atualizada para %d minuto(s). Nova matriz de custos:\n",
+           u, v, novo_peso);
+    apsp_imprimir_matriz(r);
+}
 
 int main(int argc, char *argv[])
 {
-    /* -----------------------------------------------------------------
-     * TESTE do modulo io: carrega o mapa de um arquivo e imprime a matriz.
-     * Uso: ./despacho data/mapa_exemplo.txt
-     * Os modulos floyd_warshall (APSP, rota e update) serao ligados depois.
-     * ----------------------------------------------------------------- */
-
     if (argc < 2) {
         fprintf(stderr, "Uso: %s <arquivo_do_mapa>\n", argv[0]);
         return 1;
     }
 
+    /* 1. Carrega o mapa do arquivo. */
     Grafo *g = io_carregar_mapa(argv[1]);
     if (g == NULL) {
         fprintf(stderr, "Erro ao carregar o mapa.\n");
         return 1;
     }
 
-    printf("== Matriz de adjacencia (tempos diretos) ==\n");
-    grafo_imprimir(g);
-
+    /* 2. Roda o Floyd-Warshall uma vez (APSP + matriz de reconstrucao). */
     ResultadoAPSP *r = floyd_warshall_executar(g);
     if (r == NULL) {
         fprintf(stderr, "Erro ao executar o Floyd-Warshall.\n");
@@ -48,25 +111,40 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    printf("\n== Matriz de custos minimos (todos -> todos) ==\n");
-    apsp_imprimir_matriz(r);
+    printf("Mapa carregado: %d pontos.\n", g->num_vertices);
 
-    /* Reconstrucao de rota: mostra o caminho real, nao so o tempo. */
-    printf("\n== Rotas reconstruidas ==\n");
-    apsp_imprimir_rota(r, 0, 1);
-    apsp_imprimir_rota(r, 1, 0);
-    apsp_imprimir_rota(r, 0, 4);
+    /* 3. Laco do menu interativo. */
+    for (;;) {
+        mostrar_menu();
+        int opcao = ler_inteiro("Escolha: ");
 
-    /* Anomalia de transito: a aresta 0->1 fica mais rapida (de 4 para 1 min).
-     * Atualizacao incremental em O(V^2), sem recomputar tudo (O(V^3)). */
-    printf("\n== Anomalia de transito: rua 0->1 caiu de 4 para 1 minuto ==\n");
-    apsp_atualizar_aresta(r, 0, 1, 1);
-    apsp_imprimir_matriz(r);
+        if (opcao == 0)
+            break;
 
-    printf("\n== Mesma rota apos a atualizacao ==\n");
-    apsp_imprimir_rota(r, 0, 1);
+        switch (opcao) {
+        case 1:
+            printf("\n== Matriz de adjacencia (tempos diretos) ==\n");
+            grafo_imprimir(g);
+            break;
+        case 2:
+            printf("\n== Matriz de custos minimos (todos -> todos) ==\n");
+            apsp_imprimir_matriz(r);
+            break;
+        case 3:
+            opcao_consultar_rota(r);
+            break;
+        case 4:
+            opcao_simular_anomalia(r);
+            break;
+        default:
+            printf("Opcao invalida. Escolha um numero do menu.\n");
+            break;
+        }
+    }
 
+    /* 4. Libera tudo. */
     apsp_destruir(r);
     grafo_destruir(g);
+    printf("Encerrado.\n");
     return 0;
 }

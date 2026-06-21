@@ -64,10 +64,3 @@ despacho-logistica/
 make
 ./despacho data/mapa_exemplo.txt
 ```
-
-## Divisão de tarefas sugerida (para o grupo)
-
-- [ ] **Entrada/saída** (`io.c`): ler o mapa de um arquivo e imprimir a matriz.
-- [ ] **Grafo** (`grafo.c`): alocar/liberar a matriz de adjacência dinamicamente.
-- [ ] **Algoritmo** (`floyd_warshall.c`): APSP + reconstrução de rota + update incremental.
-- [ ] **Demonstração**: roteiro da apresentação com feedback visual no console.
