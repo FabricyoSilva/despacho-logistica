@@ -1,6 +1,6 @@
 # Sistema de Despacho de Logística Urbana
 
-Projeto da **Atividade 3 — Seminário de Estruturas Avançadas** (Proposta de Projeto 5).
+ Seminário de Estruturas Avançadas** (Proposta de Projeto 5).
 
 ## Integrantes do grupo
 
