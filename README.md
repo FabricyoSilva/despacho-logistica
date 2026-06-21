@@ -5,11 +5,11 @@ Projeto da **Atividade 3 — Seminário de Estruturas Avançadas** (Proposta de 
 ## Integrantes do grupo
 
 - Fabricyo Silva
-- Pedro Afonso
+- Pedro Afonso Cavalcante
 - Mateus Cavalcante
 - Juliana Miranda
 - Luendell dos Reis
-- Álife Roberto
+- Álife Roberto Soares
 
 ## Problema
 
