@@ -114,14 +114,14 @@ int main(int argc, char *argv[])
     printf("Mapa carregado: %d pontos.\n", g->num_vertices);
 
     /* 3. Laco do menu interativo. */
-    for (;;) {
+    int opcao = -1;
+    while (opcao != 0) {
         mostrar_menu();
-        int opcao = ler_inteiro("Escolha: ");
-
-        if (opcao == 0)
-            break;
+        opcao = ler_inteiro("Escolha: ");
 
         switch (opcao) {
+        case 0:
+            break;  /* sai do laco (condicao do while) */
         case 1:
             printf("\n== Matriz de adjacencia (tempos diretos) ==\n");
             grafo_imprimir(g);
