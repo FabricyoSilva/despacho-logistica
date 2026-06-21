@@ -6,8 +6,6 @@
  * grafo.c
  * --------
  * Implementacao da matriz de adjacencia dinamica.
- *
- * >>> ESQUELETO: as funcoes abaixo estao com TODO. Preencha a logica. <<<
  */
 
 Grafo *grafo_criar(int num_vertices)
