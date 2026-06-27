@@ -67,7 +67,7 @@ static void opcao_consultar_rota(const ResultadoAPSP *r)
 
 /* Opcao 4: pede a aresta e o novo peso, aplica a atualizacao incremental e
  * reimprime a matriz de custos minimos (antes/depois ao vivo). */
-static void opcao_simular_anomalia(ResultadoAPSP *r)
+static void opcao_simular_anomalia(ResultadoAPSP *r, Grafo *g)
 {
     int u         = ler_inteiro("Aresta - origem (u): ");
     int v         = ler_inteiro("Aresta - destino (v): ");
@@ -76,18 +76,23 @@ static void opcao_simular_anomalia(ResultadoAPSP *r)
     /* A atualizacao incremental em O(V^2) so reotimiza quando o peso DIMINUI.
      * Avisamos o usuario quando o novo peso nao melhora o caminho atual, para
      * a demonstracao ficar honesta (aumentar peso e o caso dificil). */
-    if (novo_peso >= r->dist[u][v]) {
-        printf("Aviso: o novo peso (%d) nao reduz o tempo atual de %d->%d (%d).\n",
-               novo_peso, u, v, r->dist[u][v]);
-        printf("A atualizacao incremental so trata reducao de peso; nada muda.\n");
+     int resultado = apsp_atualizar_aresta(r, g, u, v, novo_peso);
+ 
+    if (resultado == 1) {
+        printf("\nRua %d->%d atualizada para %d min (peso REDUZIU).\n", u, v, novo_peso);
+        printf("Estrategia: atualizacao incremental O(V^2).\n");
+    } else if (resultado == 0) {
+        printf("\nRua %d->%d atualizada para %d min (peso AUMENTOU).\n", u, v, novo_peso);
+        printf("Estrategia: Floyd-Warshall completo O(V^3) re-executado.\n");
+    } else {
+        printf("Erro ao atualizar a aresta.\n");
         return;
     }
-
-    apsp_atualizar_aresta(r, u, v, novo_peso);
-    printf("\nRua %d->%d atualizada para %d minuto(s). Nova matriz de custos:\n",
-           u, v, novo_peso);
+ 
+    printf("\nNova matriz de custos minimos:\n");
     apsp_imprimir_matriz(r);
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -134,7 +139,7 @@ int main(int argc, char *argv[])
             opcao_consultar_rota(r);
             break;
         case 4:
-            opcao_simular_anomalia(r);
+            opcao_simular_anomalia(r, g);
             break;
         default:
             printf("Opcao invalida. Escolha um numero do menu.\n");

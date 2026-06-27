@@ -38,15 +38,18 @@ void apsp_imprimir_matriz(const ResultadoAPSP *r);
 void apsp_imprimir_rota(const ResultadoAPSP *r, int origem, int destino);
 
 /*
- * ATUALIZACAO INCREMENTAL (o diferencial do trabalho)
- * ---------------------------------------------------
- * Quando o peso de UMA aresta (u -> v) muda por causa do transito, NAO e
- * preciso rodar Floyd-Warshall inteiro (O(V^3)) de novo. Da para reajustar
- * toda a matriz dist em O(V^2).
+ * ATUALIZACAO DE ARESTA (anomalia de transito)
+ * --------------------------------------------
+ * Atualiza o peso da aresta u->v no grafo g e recalcula a matriz APSP em r.
  *
- * TODO: implementar a atualizacao em O(V^2) ao reduzir o peso de uma aresta.
- *       (aumentar o peso e o caso dificil — discutir no relatorio).
+ * - Reducao de peso: atualizacao incremental em O(V^2) — rapido.
+ * - Aumento de peso: re-executa Floyd-Warshall completo em O(V^3), pois
+ *   caminhos que passavam pela aresta agora podem ser invalidos e nao ha
+ *   como corrigir isso de forma incremental sem uma re-exploracao global.
+ *
+ * Retorna 1 se o peso foi reduzido (incremental), 0 se foi aumentado (FW
+ * completo). Retorna -1 em caso de erro.
  */
-void apsp_atualizar_aresta(ResultadoAPSP *r, int u, int v, int novo_peso);
+int apsp_atualizar_aresta(ResultadoAPSP *r, Grafo *g, int u, int v, int novo_peso);
 
 #endif /* FLOYD_WARSHALL_H */

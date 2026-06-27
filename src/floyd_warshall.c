@@ -170,42 +170,78 @@ void apsp_imprimir_rota(const ResultadoAPSP *r, int origem, int destino)
     printf("\n");
 }
 
-void apsp_atualizar_aresta(ResultadoAPSP *r, int u, int v, int novo_peso)
+int apsp_atualizar_aresta(ResultadoAPSP *r, Grafo *g, int u, int v, int novo_peso)
 {
     int i, j, V;
 
     if (r == NULL)
-        return;
+        return -1;
 
     V = r->num_vertices;
 
     if (u < 0 || u >= V || v < 0 || v >= V) {
         fprintf(stderr, "Aviso: atualizacao (%d -> %d) ignorada (indice invalido).\n",
                 u, v);
-        return;
+        return -1;
     }
 
-    /* Atualizacao incremental em O(V^2), valida quando o peso DIMINUI.
-     * Se a nova aresta u->v nao melhora o que ja temos, nada muda. */
-    if (novo_peso >= r->dist[u][v])
-        return;
+    g->adj[u][v] = novo_peso;
 
-    /* A aresta direta u->v ficou mais rapida: registra. */
-    r->dist[u][v] = novo_peso;
-    r->prox[u][v] = v;
+    /* ------------------------------------------------------------------ *
+     * CASO 1 — REDUCAO DE PESO: atualizacao incremental em O(V^2).       *
+     *   A aresta ficou mais rapida; caminhos que passam por ela podem     *
+     *   melhorar. Basta propagar o ganho para todos os pares (i, j).     *
+     * ------------------------------------------------------------------ */
 
-    /* Propaga: para todo par (i, j), verifica se o caminho que usa a aresta
-     * melhorada (i ... u -> v ... j) ficou mais curto que o atual. */
-    for (i = 0; i < V; i++) {
-        if (r->dist[i][u] == INFINITO)   /* i nem chega em u: nada a fazer */
-            continue;
-        for (j = 0; j < V; j++) {
-            if (r->dist[v][j] == INFINITO) /* de v nao se chega em j */
+    if (novo_peso < r->dist[u][v]) {
+        r->dist[u][v] = novo_peso;
+        r->prox[u][v] = v;
+ 
+        for (i = 0; i < V; i++) {
+            if (r->dist[i][u] == INFINITO)  /* i nem chega em u: nada a fazer */
                 continue;
-            if (r->dist[i][u] + novo_peso + r->dist[v][j] < r->dist[i][j]) {
-                r->dist[i][j] = r->dist[i][u] + novo_peso + r->dist[v][j];
-                r->prox[i][j] = r->prox[i][u];
+            for (j = 0; j < V; j++) {
+                if (r->dist[v][j] == INFINITO)  /* de v nao se chega em j */
+                    continue;
+                if (r->dist[i][u] + novo_peso + r->dist[v][j] < r->dist[i][j]) {
+                    r->dist[i][j] = r->dist[i][u] + novo_peso + r->dist[v][j];
+                    r->prox[i][j] = r->prox[i][u];
+                }
             }
         }
+        return 1; /* incremental */
     }
+ 
+    /* ------------------------------------------------------------------ *
+     * CASO 2 — AUMENTO DE PESO (ou peso igual): re-executa Floyd-Warshall*
+     *   Caminhos que usavam a aresta antiga podem ter ficado invalidos.   *
+     *   Nao ha como corrigir isso de forma incremental sem re-explorar    *
+     *   o grafo inteiro — O(V^3) inevitavel neste caso.                  *
+     * ------------------------------------------------------------------ */
+    if (novo_peso > r->dist[u][v]) {
+        /* Reinicializa dist e prox a partir do grafo atualizado. */
+        for (i = 0; i < V; i++) {
+            for (j = 0; j < V; j++) {
+                r->dist[i][j] = g->adj[i][j];
+                r->prox[i][j] = (g->adj[i][j] != INFINITO) ? j : -1;
+            }
+        }
+        /* Nucleo do Floyd-Warshall completo. */
+        int k;
+        for (k = 0; k < V; k++) {
+            for (i = 0; i < V; i++) {
+                for (j = 0; j < V; j++) {
+                    if (r->dist[i][k] != INFINITO &&
+                        r->dist[k][j] != INFINITO &&
+                        r->dist[i][k] + r->dist[k][j] < r->dist[i][j]) {
+                        r->dist[i][j] = r->dist[i][k] + r->dist[k][j];
+                        r->prox[i][j] = r->prox[i][k];
+                    }
+                }
+            }
+        }
+        return 0; /* FW completo */
+    }
+ 
+    return 0; /* peso igual: nada mudou, mas g->adj ja foi sincronizado */
 }
