@@ -172,31 +172,55 @@ void apsp_imprimir_rota(const ResultadoAPSP *r, int origem, int destino)
 
 int apsp_atualizar_aresta(ResultadoAPSP *r, Grafo *g, int u, int v, int novo_peso)
 {
-    int i, j, V;
+    int i, j, k, V;
+    int peso_antigo;
 
-    if (r == NULL)
+    if (r == NULL || g == NULL)
         return -1;
 
     V = r->num_vertices;
 
-    if (u < 0 || u >= V || v < 0 || v >= V) {
+    /* O resultado e o grafo precisam descrever o mesmo numero de vertices. */
+    if (V != g->num_vertices) {
+        fprintf(stderr, "Aviso: grafo e resultado com tamanhos diferentes.\n");
+        return -1;
+    }
+
+    /* Indices fora do intervalo ou laco proprio (u == v) sao invalidos:
+     * a diagonal deve permanecer 0 e nao representa uma rua. */
+    if (u < 0 || u >= V || v < 0 || v >= V || u == v) {
         fprintf(stderr, "Aviso: atualizacao (%d -> %d) ignorada (indice invalido).\n",
                 u, v);
         return -1;
     }
 
+    /* Guarda o peso direto anterior ANTES de sobrescrever: a decisao entre
+     * reduzir/aumentar tem que olhar para a aresta direta, nao para o menor
+     * caminho atual (r->dist[u][v]), que pode ser menor via outra rota. */
+    peso_antigo = g->adj[u][v];
+
+    /* Sincroniza a matriz de adjacencia com o novo peso da aresta. */
     g->adj[u][v] = novo_peso;
+
+    /* Sem mudanca real no peso: nada a recalcular. */
+    if (novo_peso == peso_antigo)
+        return 2;
 
     /* ------------------------------------------------------------------ *
      * CASO 1 — REDUCAO DE PESO: atualizacao incremental em O(V^2).       *
      *   A aresta ficou mais rapida; caminhos que passam por ela podem     *
      *   melhorar. Basta propagar o ganho para todos os pares (i, j).     *
      * ------------------------------------------------------------------ */
+    if (novo_peso < peso_antigo) {
+        /* So ha o que propagar se a aresta mais barata realmente melhora o
+         * menor caminho atual u->v. Se ja existe rota igual ou melhor por
+         * outro lugar, a matriz nao muda. */
+        if (novo_peso >= r->dist[u][v])
+            return 2;
 
-    if (novo_peso < r->dist[u][v]) {
         r->dist[u][v] = novo_peso;
         r->prox[u][v] = v;
- 
+
         for (i = 0; i < V; i++) {
             if (r->dist[i][u] == INFINITO)  /* i nem chega em u: nada a fazer */
                 continue;
@@ -211,37 +235,30 @@ int apsp_atualizar_aresta(ResultadoAPSP *r, Grafo *g, int u, int v, int novo_pes
         }
         return 1; /* incremental */
     }
- 
+
     /* ------------------------------------------------------------------ *
-     * CASO 2 — AUMENTO DE PESO (ou peso igual): re-executa Floyd-Warshall*
+     * CASO 2 — AUMENTO DE PESO: re-executa Floyd-Warshall completo.      *
      *   Caminhos que usavam a aresta antiga podem ter ficado invalidos.   *
      *   Nao ha como corrigir isso de forma incremental sem re-explorar    *
      *   o grafo inteiro — O(V^3) inevitavel neste caso.                  *
      * ------------------------------------------------------------------ */
-    if (novo_peso > r->dist[u][v]) {
-        /* Reinicializa dist e prox a partir do grafo atualizado. */
+    for (i = 0; i < V; i++) {
+        for (j = 0; j < V; j++) {
+            r->dist[i][j] = g->adj[i][j];
+            r->prox[i][j] = (g->adj[i][j] != INFINITO) ? j : -1;
+        }
+    }
+    for (k = 0; k < V; k++) {
         for (i = 0; i < V; i++) {
             for (j = 0; j < V; j++) {
-                r->dist[i][j] = g->adj[i][j];
-                r->prox[i][j] = (g->adj[i][j] != INFINITO) ? j : -1;
-            }
-        }
-        /* Nucleo do Floyd-Warshall completo. */
-        int k;
-        for (k = 0; k < V; k++) {
-            for (i = 0; i < V; i++) {
-                for (j = 0; j < V; j++) {
-                    if (r->dist[i][k] != INFINITO &&
-                        r->dist[k][j] != INFINITO &&
-                        r->dist[i][k] + r->dist[k][j] < r->dist[i][j]) {
-                        r->dist[i][j] = r->dist[i][k] + r->dist[k][j];
-                        r->prox[i][j] = r->prox[i][k];
-                    }
+                if (r->dist[i][k] != INFINITO &&
+                    r->dist[k][j] != INFINITO &&
+                    r->dist[i][k] + r->dist[k][j] < r->dist[i][j]) {
+                    r->dist[i][j] = r->dist[i][k] + r->dist[k][j];
+                    r->prox[i][j] = r->prox[i][k];
                 }
             }
         }
-        return 0; /* FW completo */
     }
- 
-    return 0; /* peso igual: nada mudou, mas g->adj ja foi sincronizado */
+    return 0; /* FW completo */
 }

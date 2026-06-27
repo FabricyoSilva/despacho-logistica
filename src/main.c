@@ -73,26 +73,30 @@ static void opcao_simular_anomalia(ResultadoAPSP *r, Grafo *g)
     int v         = ler_inteiro("Aresta - destino (v): ");
     int novo_peso = ler_inteiro("Novo peso (minutos): ");
 
-    /* A atualizacao incremental em O(V^2) so reotimiza quando o peso DIMINUI.
-     * Avisamos o usuario quando o novo peso nao melhora o caminho atual, para
-     * a demonstracao ficar honesta (aumentar peso e o caso dificil). */
-     int resultado = apsp_atualizar_aresta(r, g, u, v, novo_peso);
- 
+    /* Aplica a mudanca e escolhe a estrategia conforme o impacto:
+     *   - reducao que melhora rotas  -> atualizacao incremental O(V^2);
+     *   - aumento de peso            -> Floyd-Warshall completo O(V^3);
+     *   - mudanca sem efeito         -> nada a recalcular. */
+    int resultado = apsp_atualizar_aresta(r, g, u, v, novo_peso);
+
     if (resultado == 1) {
         printf("\nRua %d->%d atualizada para %d min (peso REDUZIU).\n", u, v, novo_peso);
         printf("Estrategia: atualizacao incremental O(V^2).\n");
     } else if (resultado == 0) {
         printf("\nRua %d->%d atualizada para %d min (peso AUMENTOU).\n", u, v, novo_peso);
         printf("Estrategia: Floyd-Warshall completo O(V^3) re-executado.\n");
+    } else if (resultado == 2) {
+        printf("\nRua %d->%d atualizada para %d min, mas nenhum caminho minimo mudou.\n",
+               u, v, novo_peso);
+        return;
     } else {
         printf("Erro ao atualizar a aresta.\n");
         return;
     }
- 
+
     printf("\nNova matriz de custos minimos:\n");
     apsp_imprimir_matriz(r);
 }
-
 
 int main(int argc, char *argv[])
 {

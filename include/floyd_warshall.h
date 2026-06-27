@@ -47,8 +47,11 @@ void apsp_imprimir_rota(const ResultadoAPSP *r, int origem, int destino);
  *   caminhos que passavam pela aresta agora podem ser invalidos e nao ha
  *   como corrigir isso de forma incremental sem uma re-exploracao global.
  *
- * Retorna 1 se o peso foi reduzido (incremental), 0 se foi aumentado (FW
- * completo). Retorna -1 em caso de erro.
+ * Codigos de retorno:
+ *    1 -> peso reduziu e a matriz foi reotimizada incrementalmente (O(V^2));
+ *    0 -> peso aumentou e o Floyd-Warshall foi re-executado (O(V^3));
+ *    2 -> a mudanca nao afetou nenhum caminho minimo (nada recalculado);
+ *   -1 -> erro (ponteiro nulo, tamanhos divergentes ou indice invalido).
  */
 int apsp_atualizar_aresta(ResultadoAPSP *r, Grafo *g, int u, int v, int novo_peso);
 
