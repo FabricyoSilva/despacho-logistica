@@ -140,7 +140,7 @@ void apsp_imprimir_matriz(const ResultadoAPSP *r)
 
 void apsp_imprimir_rota(const ResultadoAPSP *r, int origem, int destino)
 {
-    int u;
+    int u, passos;
 
     if (r == NULL)
         return;
@@ -163,8 +163,18 @@ void apsp_imprimir_rota(const ResultadoAPSP *r, int origem, int destino)
     printf("Rota %d -> %d (custo %d): %d", origem, destino,
            r->dist[origem][destino], origem);
     u = origem;
+    passos = 0;
     while (u != destino) {
         u = r->prox[u][destino];
+
+        /* Salvaguarda: um caminho minimo simples visita no maximo V vertices.
+         * Se prox apontar para -1 ou passarmos disso, ha algo inconsistente
+         * (ex.: ciclo negativo). Aborta em vez de imprimir para sempre. */
+        if (u < 0 || ++passos > r->num_vertices) {
+            printf(" ... [rota interrompida: caminho inconsistente]\n");
+            return;
+        }
+
         printf(" -> %d", u);
     }
     printf("\n");

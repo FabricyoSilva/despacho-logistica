@@ -23,23 +23,29 @@
  * Uso: ./despacho data/mapa_exemplo.txt
  */
 
-/* Le um inteiro do teclado de forma robusta: repete enquanto a entrada nao for
- * um numero valido (limpando o que sobrou no buffer). Retorna o valor lido. */
-static int ler_inteiro(const char *prompt)
+/* Le um inteiro do teclado de forma robusta. Grava o numero lido em *valor e
+ * retorna 1 em caso de sucesso. Se a entrada nao for um numero, limpa o buffer
+ * e pede de novo. Se a entrada TERMINAR (EOF: Ctrl+Z/Ctrl+D, pipe ou arquivo
+ * que acaba), retorna 0 — assim o programa encerra em vez de entrar num laco
+ * infinito imprimindo "Entrada invalida". */
+static int ler_inteiro(const char *prompt, int *valor)
 {
-    int valor;
     int c;
 
     for (;;) {
         printf("%s", prompt);
-        if (scanf("%d", &valor) == 1) {
+        if (scanf("%d", valor) == 1) {
             /* descarta o resto da linha (incluindo o '\n') */
             while ((c = getchar()) != '\n' && c != EOF)
                 ;
-            return valor;
+            return 1;
         }
 
-        /* entrada invalida: limpa o buffer e pede de novo */
+        /* Fim da entrada: nao ha mais nada para ler, sai para nao travar. */
+        if (feof(stdin))
+            return 0;
+
+        /* entrada invalida (nao e numero): limpa o buffer e pede de novo */
         printf("Entrada invalida, tente novamente.\n");
         while ((c = getchar()) != '\n' && c != EOF)
             ;
@@ -60,8 +66,13 @@ static void mostrar_menu(void)
 /* Opcao 3: pede origem/destino e imprime a rota reconstruida. */
 static void opcao_consultar_rota(const ResultadoAPSP *r)
 {
-    int origem  = ler_inteiro("Origem: ");
-    int destino = ler_inteiro("Destino: ");
+    int origem, destino;
+
+    /* Se a entrada terminar (EOF) no meio, aborta a operacao. */
+    if (!ler_inteiro("Origem: ", &origem) ||
+        !ler_inteiro("Destino: ", &destino))
+        return;
+
     apsp_imprimir_rota(r, origem, destino);
 }
 
@@ -69,9 +80,21 @@ static void opcao_consultar_rota(const ResultadoAPSP *r)
  * reimprime a matriz de custos minimos (antes/depois ao vivo). */
 static void opcao_simular_anomalia(ResultadoAPSP *r, Grafo *g)
 {
-    int u         = ler_inteiro("Aresta - origem (u): ");
-    int v         = ler_inteiro("Aresta - destino (v): ");
-    int novo_peso = ler_inteiro("Novo peso (minutos): ");
+    int u, v, novo_peso;
+
+    /* Se a entrada terminar (EOF) no meio, aborta a operacao. */
+    if (!ler_inteiro("Aresta - origem (u): ", &u) ||
+        !ler_inteiro("Aresta - destino (v): ", &v) ||
+        !ler_inteiro("Novo peso (minutos): ", &novo_peso))
+        return;
+
+    /* Tempo de deslocamento nao pode ser negativo. Um peso negativo criaria um
+     * ciclo de custo negativo, e a reconstrucao da rota entraria em laco
+     * infinito (o caminho minimo deixaria de ser bem definido). */
+    if (novo_peso < 0) {
+        printf("Peso invalido: o tempo em minutos deve ser >= 0.\n");
+        return;
+    }
 
     /* Aplica a mudanca e escolhe a estrategia conforme o impacto:
      *   - reducao que melhora rotas  -> atualizacao incremental O(V^2);
@@ -126,7 +149,10 @@ int main(int argc, char *argv[])
     int opcao = -1;
     while (opcao != 0) {
         mostrar_menu();
-        opcao = ler_inteiro("Escolha: ");
+
+        /* EOF na entrada: encerra de forma limpa, como se fosse a opcao 0. */
+        if (!ler_inteiro("Escolha: ", &opcao))
+            break;
 
         switch (opcao) {
         case 0:
