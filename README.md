@@ -60,16 +60,18 @@ despacho-logistica/
 
 ## Como compilar e executar
 
-```bash
-make                              # compila e gera o executavel ./despacho
-./despacho data/mapa_exemplo.txt  # roda passando o mapa como argumento
-```
-
-Ou, em um passo só, usando o atalho do Makefile:
+Funciona no **Windows** e no **Linux** (basta ter o `gcc` instalado):
 
 ```bash
-make run     # compila e ja roda com data/mapa_exemplo.txt
-make clean   # remove os objetos (build/) e o executavel
+# 1. Copiar o repositorio
+git clone https://github.com/FabricyoSilva/despacho-logistica.git
+cd despacho-logistica
+
+# 2. Compilar (gera ./despacho no Linux e despacho.exe no Windows)
+gcc -Wall -Wextra -std=c11 -Iinclude src/grafo.c src/floyd_warshall.c src/io.c src/main.c -o despacho
+
+# 3. Executar passando o mapa como argumento
+./despacho data/mapa_exemplo.txt
 ```
 
 ## Usando o sistema (menu interativo)
