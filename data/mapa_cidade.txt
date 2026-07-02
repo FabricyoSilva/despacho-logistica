@@ -1,0 +1,26 @@
+# Mapa urbano "Cidade" - 7 pontos de entrega
+#
+# Legenda dos vertices:
+#   0 = Centro de Distribuicao (CD)
+#   1 = Bairro Norte
+#   2 = Zona Leste
+#   3 = Shopping
+#   4 = Zona Sul
+#   5 = Porto
+#   6 = Aeroporto
+#
+# Grafo direcionado; peso = tempo de deslocamento em minutos.
+#
+7 12
+0 1 6
+0 3 2
+1 2 3
+3 1 3
+3 4 4
+2 6 2
+4 2 5
+4 5 3
+5 6 4
+6 0 8
+1 5 9
+2 4 1

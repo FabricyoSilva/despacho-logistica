@@ -239,7 +239,11 @@ int apsp_atualizar_aresta(ResultadoAPSP *r, Grafo *g, int u, int v, int novo_pes
                     continue;
                 if (r->dist[i][u] + novo_peso + r->dist[v][j] < r->dist[i][j]) {
                     r->dist[i][j] = r->dist[i][u] + novo_peso + r->dist[v][j];
-                    r->prox[i][j] = r->prox[i][u];
+                    /* Primeiro salto de i->j pelo caminho i->u->v->j.
+                     * Se i == u, o caminho comeca na propria aresta reduzida,
+                     * logo o proximo passo e v (usar prox[i][u] daria prox[u][u]
+                     * = u, criando um autoloop que corrompe a reconstrucao). */
+                    r->prox[i][j] = (i == u) ? v : r->prox[i][u];
                 }
             }
         }
